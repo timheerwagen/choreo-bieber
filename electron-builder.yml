@@ -1,6 +1,6 @@
-appId: com.example.nextron
-productName: My Nextron App
-copyright: Copyright © 2018 Yoshihide Shiono
+appId: com.choreo-biber.nextron
+productName: Choreo Biber
+copyright: Copyright © 2023
 directories:
   output: dist
   buildResources: resources
@@ -10,3 +10,5 @@ files:
       - package.json
       - app
 publish: null
+mac: { icon: app/images/apple-touch-icon.png }
+win: { icon: app/images/logo.png }

@@ -10,19 +10,18 @@ import {
   Radio,
   RadioGroup,
   Table,
-  TableCaption,
   TableContainer,
   Tbody,
   Td,
   Text,
-  Tfoot,
   Th,
   Thead,
   Tr,
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { ShapeProps, getAreas, getViewBox, getViewBoxRatio } from "../lib/svg";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 type UploadFormProps = {
   file: FileList;
@@ -42,6 +41,8 @@ const Home = () => {
     watch,
     formState: { errors },
   } = useForm<UploadFormProps>({ defaultValues: { width: 86 } });
+
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const files = watch("file");
   const width = watch("width");
@@ -75,6 +76,10 @@ const Home = () => {
     const parsed = getAreas(await data.file[0].text(), realArea);
 
     setResult({ totalArea: realArea, shapes: parsed });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    resultsRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -83,7 +88,15 @@ const Home = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4 p-4"
       >
-        <Heading>Choreo Biber</Heading>
+        <div className="flex flex-row gap-4 items-center">
+          <Image
+            src="/images/android-chrome-512x512.png"
+            alt="biber-logo"
+            width="48"
+            height="48"
+          />
+          <Heading>Choreo Biber</Heading>
+        </div>
         <FormControl isInvalid={!!errors.file}>
           <FormLabel>Datei</FormLabel>
           <Input
@@ -110,7 +123,6 @@ const Home = () => {
           </RadioGroup>
           <FormHelperText>Lege fest welche Seite fix sein soll.</FormHelperText>
         </FormControl>
-
         {radioValue === "height" ? (
           <FormControl>
             <FormLabel size="sm">Höhe</FormLabel>
@@ -152,8 +164,11 @@ const Home = () => {
         <Button type="submit">Los gehts.</Button>
       </form>
       {result && (
-        <div className="flex flex-col gap-4 m-4 p-4 rounded-lg bg-gray-100">
-          <Heading>Ergebnisse</Heading>
+        <div
+          ref={resultsRef}
+          className="flex flex-col gap-4 m-4 p-4 rounded-lg bg-gray-100"
+        >
+          <Heading>🎉 Ergebnisse</Heading>
           <TableContainer>
             <Table variant="simple">
               <Thead>
