@@ -4,29 +4,40 @@ import {
   FormHelperText,
   FormLabel,
   Heading,
+  Icon,
   Input,
   InputGroup,
   InputRightElement,
-  Radio,
-  RadioGroup,
+  Slider,
+  SliderFilledTrack,
+  SliderMark,
+  SliderThumb,
+  SliderTrack,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
   Table,
   TableContainer,
+  Tabs,
   Tbody,
   Td,
-  Text,
   Th,
   Thead,
   Tr,
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
-import { ShapeProps, getAreas, getViewBox, getViewBoxRatio } from "../lib/svg";
-import { useEffect, useRef, useState } from "react";
+import { ShapeProps, getAreas } from "../lib/svg";
+import { useRef, useState } from "react";
 import Image from "next/image";
+import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 type UploadFormProps = {
   file: FileList;
-  width?: number;
-  height?: number;
+  rect?: { height: number; width: number };
+  trapeze?: { height: number; "width-top": number; "width-bottom": number };
+  freeform?: { height: number; width: number };
 };
 
 type ResultProps = {
@@ -38,44 +49,49 @@ const Home = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
-  } = useForm<UploadFormProps>({ defaultValues: { width: 86 } });
+  } = useForm<UploadFormProps>({
+    defaultValues: {
+      rect: { height: 35.5, width: 85.5 },
+      trapeze: { height: 35.5, "width-top": 85.5, "width-bottom": 75 },
+      freeform: { height: 35.5, width: 85.5 },
+    },
+  });
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const files = watch("file");
-  const width = watch("width");
-  const height = watch("height");
-
-  const [ratio, setRatio] = useState(0);
-
   const [result, setResult] = useState<ResultProps>();
 
-  useEffect(() => {
-    const calcRatio = async () => {
-      if (!files?.[0]) return;
-      const svgText = await files[0].text();
+  const tabs = ["rect", "trapeze", "freeform"];
+  const calcArea = (data) => ({
+    rect: data.height * data.width,
+    trapeze: data.height * ((data["width-top"] + data["width-bottom"]) / 2),
+    freeform: data.height * data.width,
+  });
+  const calcViewboxArea = (data) => ({
+    rect: data.height * data.width,
+    trapeze: data.height * Math.max(data["width-top"], data["width-bottom"]),
+    freeform: data.height * data.width,
+  });
+  const [tabIndex, setTabIndex] = useState(0);
 
-      const viewBoxRatio = getViewBoxRatio(getViewBox(svgText));
-
-      setRatio(viewBoxRatio);
-    };
-
-    calcRatio();
-  }, [files]);
-
-  const [radioValue, setRadioValue] = useState<string>("width");
+  const [puffer, setPuffer] = useState(10);
+  const [m2perBucket, setM2perBucket] = useState(60);
 
   const onSubmit = async (data: UploadFormProps) => {
-    const realArea =
-      radioValue === "height"
-        ? height * (height * ratio)
-        : width * (width / ratio);
+    const areaType = tabs[tabIndex];
+    const realMaxArea = calcViewboxArea(data[areaType])[areaType];
+    const realArea = calcArea(data[areaType])[areaType];
 
-    const parsed = getAreas(await data.file[0].text(), realArea);
+    const parsed = getAreas(await data.file[0].text(), realMaxArea);
 
-    setResult({ totalArea: realArea, shapes: parsed });
+    if (areaType !== "freeform") {
+      setResult({ totalArea: realArea, shapes: parsed });
+    } else {
+      const totalArea = parsed.reduce((prev, next) => prev + next.area, 0);
+
+      setResult({ totalArea, shapes: parsed });
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -88,14 +104,28 @@ const Home = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4 p-4"
       >
-        <div className="flex flex-row gap-4 items-center">
-          <Image
-            src="/images/android-chrome-512x512.png"
-            alt="biber-logo"
-            width="48"
-            height="48"
-          />
-          <Heading>Choreo Biber</Heading>
+        <div className="flex flex-row gap-4 justify-between items-center">
+          <div className="flex flex-row gap-4 items-center">
+            <Image
+              src="/images/android-chrome-512x512.png"
+              alt="biber-logo"
+              width="48"
+              height="48"
+            />
+            <Heading>Choreo Biber</Heading>
+          </div>
+          <Link href="/converter">
+            <Button
+              size="sm"
+              rightIcon={
+                <Icon>
+                  <ArrowRightIcon />
+                </Icon>
+              }
+            >
+              SVG Konverter
+            </Button>
+          </Link>
         </div>
         <FormControl isInvalid={!!errors.file}>
           <FormLabel>Datei</FormLabel>
@@ -106,61 +136,108 @@ const Home = () => {
           />
           <FormHelperText>Bitte wähle eine .SVG Datei aus.</FormHelperText>
         </FormControl>
-        <FormControl>
-          <RadioGroup
-            className="flex flex-row gap-4"
-            onChange={setRadioValue}
-            value={radioValue}
-          >
-            <FormControl>
-              <FormLabel size="sm">Höhe</FormLabel>
-              <Radio value="height" />
-            </FormControl>
-            <FormControl>
-              <FormLabel size="sm">Breite</FormLabel>
-              <Radio value="width" />
-            </FormControl>
-          </RadioGroup>
-          <FormHelperText>Lege fest welche Seite fix sein soll.</FormHelperText>
-        </FormControl>
-        {radioValue === "height" ? (
-          <FormControl>
-            <FormLabel size="sm">Höhe</FormLabel>
-            <InputGroup size="sm">
-              <Input
-                step={0.01}
-                type="number"
-                size="sm"
-                {...register("height")}
-              />
-              <InputRightElement>m²</InputRightElement>
-            </InputGroup>
-          </FormControl>
-        ) : (
-          <FormControl>
-            <FormLabel size="sm">Breite</FormLabel>
-            <InputGroup size="sm">
-              <Input
-                step={0.01}
-                type="number"
-                size="sm"
-                {...register("width")}
-              />
-              <InputRightElement>m²</InputRightElement>
-            </InputGroup>
-          </FormControl>
-        )}
-        {ratio ? (
-          radioValue === "height" ? (
-            <Text>
-              Generierte <b>Breite</b>: {(height * ratio).toFixed(2)}
-            </Text>
-          ) : (
-            <Text>
-              Generierte <b>Höhe</b>: {(width / ratio).toFixed(2)}
-            </Text>
-          )
-        ) : null}
+
+        <Tabs index={tabIndex} onChange={setTabIndex}>
+          <TabList>
+            <Tab>Rechteck</Tab>
+            <Tab>Trapez</Tab>
+            <Tab>Freiform / Oval ...</Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel className="flex flex-col gap-4">
+              <FormControl>
+                <FormLabel size="sm">Höhe</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("rect.height", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel size="sm">Breite</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("rect.width", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+            </TabPanel>
+            <TabPanel className="flex flex-col gap-4">
+              <FormControl>
+                <FormLabel size="sm">Höhe</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("trapeze.height", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel size="sm">Breite oben</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("trapeze.width-top", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel size="sm">Breite unten</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("trapeze.width-bottom", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+            </TabPanel>
+            <TabPanel className="flex flex-col gap-4">
+              <FormControl>
+                <FormLabel size="sm">Maximale Höhe</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("freeform.height", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel size="sm">Maximale Breite</FormLabel>
+                <InputGroup size="sm">
+                  <Input
+                    step={0.01}
+                    type="number"
+                    size="sm"
+                    {...register("freeform.width", { required: true })}
+                  />
+                  <InputRightElement>m</InputRightElement>
+                </InputGroup>
+              </FormControl>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+
         <Button type="submit">Los gehts.</Button>
       </form>
       {result && (
@@ -176,6 +253,8 @@ const Home = () => {
                   <Th>Bezeichnung</Th>
                   <Th>Farbe</Th>
                   <Th isNumeric>Fläche in m²</Th>
+                  <Th isNumeric>mit Puffer in m² </Th>
+                  <Th isNumeric>Eimer</Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -185,6 +264,56 @@ const Home = () => {
                   </Td>
                   <Td />
                   <Td isNumeric>{result.totalArea.toFixed(2)}</Td>
+                  <Td>
+                    <Slider
+                      size="sm"
+                      value={puffer}
+                      onChange={(val) => setPuffer(val)}
+                    >
+                      <SliderMark
+                        value={puffer}
+                        textAlign="center"
+                        bg="blue.500"
+                        fontSize="xs"
+                        color="white"
+                        mt="-8"
+                        ml="-5"
+                        w="10"
+                      >
+                        {puffer}%
+                      </SliderMark>
+                      <SliderTrack>
+                        <SliderFilledTrack />
+                      </SliderTrack>
+                      <SliderThumb />
+                    </Slider>
+                  </Td>
+                  <Td>
+                    <Slider
+                      size="sm"
+                      value={m2perBucket}
+                      min={1}
+                      max={120}
+                      onChange={(val) => setM2perBucket(val)}
+                    >
+                      <SliderMark
+                        value={m2perBucket}
+                        textAlign="center"
+                        bg="blue.500"
+                        fontSize="xs"
+                        color="white"
+                        mt="-8"
+                        ml="-8"
+                        w="16"
+                      >
+                        {m2perBucket}m²/Eimer
+                      </SliderMark>
+                      <SliderTrack>
+                        <SliderFilledTrack />
+                      </SliderTrack>
+                      <SliderThumb />
+                    </Slider>
+                  </Td>
                 </Tr>
                 {result.shapes.map((shape, i) => (
                   <Tr>
@@ -197,6 +326,14 @@ const Home = () => {
                       {shape.color}
                     </Td>
                     <Td isNumeric>{shape.area.toFixed(2)}</Td>
+                    <Td isNumeric>
+                      {(shape.area * (1 + puffer / 100)).toFixed(2)}
+                    </Td>
+                    <Td isNumeric>
+                      {Math.ceil(
+                        (shape.area * (1 + puffer / 100)) / m2perBucket
+                      )}
+                    </Td>
                   </Tr>
                 ))}
               </Tbody>
