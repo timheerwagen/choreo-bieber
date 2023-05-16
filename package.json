@@ -11,8 +11,7 @@
     "dev": "nextron",
     "build": "nextron build --win --x64",
     "postinstall": "electron-builder install-app-deps",
-    "semantic-release": "semantic-release",
-    "release": "electron-builder"
+    "semantic-release": "semantic-release"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.6.1",
