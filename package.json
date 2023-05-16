@@ -1,6 +1,10 @@
 {
   "private": true,
   "name": "choreo-bieber",
+  "description": "Choreo Biber 3000",
+  "author": {
+    "name": "Unbekannt"
+  },
   "version": "1.0.0",
   "main": "app/background.js",
   "scripts": {

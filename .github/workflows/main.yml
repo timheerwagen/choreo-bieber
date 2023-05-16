@@ -33,10 +33,18 @@ jobs:
       # - name: Commit message checken
       # run: npx commitlint --from=HEAD~1 --config commitlint.config.ts
 
+      - run: sudo dpkg --add-architecture i386
+      - run: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 86B72ED9
+      - run: add-apt-repository 'deb [arch=amd64] https://mirror.mxe.cc/repos/apt focal main'
+      - run: apt -qq update
+      - run: apt install -y --allow-downgrades libpcre2-8-0=10.34-7
+      - name: Wine installieren # damit Windows von Linux aus gebuildet werden kann
+        run: apt install -y wine32
+
       - name: Build
         run: npm run build
 
       - name: Semantic release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npm run semantic-release # .npmrc vorher löschen, da sonst NPM_TOKEN überschrieben wird, obwohl in .npmrc nicht vorhanden.
+        run: npm run semantic-release
