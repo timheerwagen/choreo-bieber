@@ -10,5 +10,5 @@ files:
       - package.json
       - app
 publish: null
-mac: { icon: app/images/apple-touch-icon.png }
+mac: { icon: app/images/logo.png }
 win: { icon: app/images/logo.png }
