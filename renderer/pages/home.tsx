@@ -104,28 +104,14 @@ const Home = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4 p-4"
       >
-        <div className="flex flex-row gap-4 justify-between items-center">
-          <div className="flex flex-row gap-4 items-center">
-            <Image
-              src="/images/android-chrome-512x512.png"
-              alt="biber-logo"
-              width="48"
-              height="48"
-            />
-            <Heading>Choreo Biber</Heading>
-          </div>
-          <Link href="/converter">
-            <Button
-              size="sm"
-              rightIcon={
-                <Icon>
-                  <ArrowRightIcon />
-                </Icon>
-              }
-            >
-              SVG Konverter
-            </Button>
-          </Link>
+        <div className="flex flex-row gap-4 items-center">
+          <Image
+            src="/images/android-chrome-512x512.png"
+            alt="biber-logo"
+            width="48"
+            height="48"
+          />
+          <Heading>Choreo Biber</Heading>
         </div>
         <FormControl isInvalid={!!errors.file}>
           <FormLabel>Datei</FormLabel>
