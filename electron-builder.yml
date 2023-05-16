@@ -11,4 +11,4 @@ files:
       - app
 publish: null
 mac: { icon: app/images/logo.png }
-win: { icon: app/images/logo.png }
+win: { icon: app/images/logo.png, publish: github }
