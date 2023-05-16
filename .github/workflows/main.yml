@@ -30,8 +30,8 @@ jobs:
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm ci
       #
-      # - name: Commit message checken
-      # run: npx commitlint --from=HEAD~1 --config commitlint.config.ts
+      - name: Commit message checken
+        run: npx commitlint --from=HEAD~1 --config commitlint.config.ts
 
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
