@@ -52,7 +52,7 @@ export const getAreas = (svgText: string, realArea: number) => {
 
   const shapes: ShapeProps[] = elements.map((element) => {
     return {
-      color: element.color,
+      color: element.color || "#000",
       area:
         (realArea / viewBoxArea) *
         Math.abs(SVGPathCommander.getPathArea(element.path)),
@@ -67,6 +67,8 @@ export const getAreas = (svgText: string, realArea: number) => {
     prev[shape.color] = shape.area;
     return prev;
   }, {} as Record<string, number>);
+
+  console.log(reduced);
 
   const newShapes: ShapeProps[] = Object.entries(reduced)
     .map(([key, value]) => ({
